@@ -28,8 +28,8 @@ function instrumentRpcTarget(rpcTarget: RpcTarget, initialiser: Initialiser) {
 		get(target, prop) {
 			const result = Reflect.get(target, prop)
 			if (typeof result === 'function') {
-				result.bind(rpcTarget)
-				return instrumentAnyFn(result, initialiser, {})
+				const boundResult = result.bind(rpcTarget)
+				return instrumentAnyFn(boundResult, initialiser, {})
 			}
 			return result
 		},

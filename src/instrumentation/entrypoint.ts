@@ -104,8 +104,8 @@ function instrumentEntrypoint(entrypoint: WorkerEntrypoint, initialiser: Initial
 			} else {
 				const result = Reflect.get(target, prop)
 				if (typeof result === 'function') {
-					result.bind(entrypoint)
-					return instrumentAnyFn(result, initialiser, env)
+					const boundResult = result.bind(entrypoint)
+					return instrumentAnyFn(boundResult, initialiser, env)
 				}
 				return result
 			}
