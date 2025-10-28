@@ -48,10 +48,19 @@ export function passthroughGet(target: any, prop: string | symbol, thisArg?: any
 	const unwrappedTarget = unwrap(target)
 	thisArg = unwrap(thisArg) || unwrappedTarget
 	const value = Reflect.get(unwrappedTarget, prop)
+
+	// DEBUG LOGGING
+	console.log('[otel-passthroughGet] Property:', String(prop))
+	console.log('[otel-passthroughGet] Value type:', typeof value)
 	if (typeof value === 'function') {
+		console.log('[otel-passthroughGet] Function constructor name:', value.constructor.name)
+		console.log('[otel-passthroughGet] Is RpcProperty?', value.constructor.name === 'RpcProperty')
+
 		if (value.constructor.name === 'RpcProperty') {
+			console.log('[otel-passthroughGet] ✅ Returning RpcProperty wrapper')
 			return (...args: unknown[]) => unwrappedTarget[prop](...args)
 		}
+		console.log('[otel-passthroughGet] ⚠️  Binding function to thisArg')
 		return value.bind(thisArg)
 	} else {
 		return value
