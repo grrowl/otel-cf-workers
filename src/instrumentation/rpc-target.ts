@@ -26,14 +26,15 @@ function instrumentAnyFn(fn: (...args: any[]) => any, initialiser: Initialiser, 
 function instrumentRpcTarget(rpcTarget: RpcTarget, initialiser: Initialiser) {
 	const objHandler: ProxyHandler<RpcTarget> = {
 		get(target, prop) {
-			const result = Reflect.get(target, prop)
+			// Unwrap target first to access raw properties (especially important for RpcProperty)
+			const unwrappedTarget = unwrap(target)
+			const result = Reflect.get(unwrappedTarget, prop)
 			if (typeof result === 'function') {
 				// RpcProperty must not be bound - it needs to be called with the unwrapped target
 				if (result.constructor.name === 'RpcProperty') {
-					const unwrappedTarget = unwrap(target)
 					return (...args: unknown[]) => (unwrappedTarget as any)[prop](...args)
 				}
-				const boundResult = result.bind(rpcTarget)
+				const boundResult = result.bind(unwrappedTarget)
 				return instrumentAnyFn(boundResult, initialiser, {})
 			}
 			return result
