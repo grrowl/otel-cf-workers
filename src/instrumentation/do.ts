@@ -217,6 +217,11 @@ function instrumentDurableObject(
 			} else {
 				const result = Reflect.get(target, prop)
 				if (typeof result === 'function') {
+					// RpcProperty must not be bound - it needs to be called with the unwrapped target
+					if (result.constructor.name === 'RpcProperty') {
+						const unwrappedTarget = unwrap(target)
+						return (...args: unknown[]) => (unwrappedTarget as any)[prop](...args)
+					}
 					const boundResult = result.bind(doObj)
 					return instrumentAnyFn(boundResult, initialiser, env, state.id)
 				}
@@ -241,6 +246,7 @@ export function instrumentDOClass<C extends DOClass>(doClass: C, initialiser: In
 			const state = instrumentState(orig_state)
 			const env = instrumentEnv(orig_env)
 			const classStyle = doClass.prototype instanceof DurableObjectClass
+			console.log('is instanceof DOClass?', doClass, doClass.prototype instanceof DurableObjectClass)
 			const createDO = () => {
 				if (classStyle) {
 					return new target(orig_state, orig_env)

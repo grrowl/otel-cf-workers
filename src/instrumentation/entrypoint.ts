@@ -104,6 +104,11 @@ function instrumentEntrypoint(entrypoint: WorkerEntrypoint, initialiser: Initial
 			} else {
 				const result = Reflect.get(target, prop)
 				if (typeof result === 'function') {
+					// RpcProperty must not be bound - it needs to be called with the unwrapped target
+					if (result.constructor.name === 'RpcProperty') {
+						const unwrappedTarget = unwrap(target)
+						return (...args: unknown[]) => (unwrappedTarget as any)[prop](...args)
+					}
 					const boundResult = result.bind(entrypoint)
 					return instrumentAnyFn(boundResult, initialiser, env)
 				}

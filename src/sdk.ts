@@ -3,21 +3,21 @@ import { Resource, resourceFromAttributes } from '@opentelemetry/resources'
 
 import { Initialiser, parseConfig, setConfig } from './config.js'
 import { WorkerTracerProvider } from './provider.js'
-import { Trigger, ResolvedTraceConfig, OrPromise, HandlerInstrumentation, ConfigurationOption } from './types.js'
-import { unwrap } from './wrap.js'
 import { WorkerTracer } from './tracer.js'
+import { ConfigurationOption, HandlerInstrumentation, OrPromise, ResolvedTraceConfig, Trigger } from './types.js'
+import { unwrap } from './wrap.js'
 
-import { fetchInstrumentation, instrumentGlobalFetch } from './instrumentation/fetch.js'
 import { instrumentGlobalCache } from './instrumentation/cache.js'
-import { QueueInstrumentation } from './instrumentation/queue.js'
-import { DOClass, instrumentDOClass } from './instrumentation/do.js'
-import { scheduledInstrumentation } from './instrumentation/scheduled.js'
-import { instrumentEnv } from './instrumentation/env.js'
-import { versionAttributes } from './instrumentation/version.js'
 import { PromiseTracker, proxyExecutionContext } from './instrumentation/common.js'
+import { DOClass, instrumentDOClass } from './instrumentation/do.js'
 import { emailInstrumentation } from './instrumentation/email.js'
 import { EntrypointClass, instrumentEntrypointClass } from './instrumentation/entrypoint.js'
-import { RpcTargetClass, instrumentRpcTargetClass } from './instrumentation/rpc-target.js'
+import { instrumentEnv } from './instrumentation/env.js'
+import { fetchInstrumentation, instrumentGlobalFetch } from './instrumentation/fetch.js'
+import { QueueInstrumentation } from './instrumentation/queue.js'
+import { instrumentRpcTargetClass, RpcTargetClass } from './instrumentation/rpc-target.js'
+import { scheduledInstrumentation } from './instrumentation/scheduled.js'
+import { versionAttributes } from './instrumentation/version.js'
 
 //@ts-ignore
 import * as versions from '../versions.json'
@@ -228,6 +228,7 @@ export function instrument<E extends Env, Q, C>(
 export function instrumentDO(doClass: DOClass, config: ConfigurationOption) {
 	const initialiser = createInitialiser(config)
 
+	console.log('instrumenting', doClass)
 	return instrumentDOClass(doClass, initialiser)
 }
 
