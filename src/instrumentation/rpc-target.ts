@@ -29,11 +29,20 @@ function instrumentRpcTarget(rpcTarget: RpcTarget, initialiser: Initialiser) {
 			// Unwrap target first to access raw properties (especially important for RpcProperty)
 			const unwrappedTarget = unwrap(target)
 			const result = Reflect.get(unwrappedTarget, prop)
+
+			// DEBUG LOGGING
+			console.log('[otel-rpc] Accessing property:', String(prop))
+			console.log('[otel-rpc] Result type:', typeof result)
 			if (typeof result === 'function') {
+				console.log('[otel-rpc] Function constructor name:', result.constructor.name)
+				console.log('[otel-rpc] Is RpcProperty?', result.constructor.name === 'RpcProperty')
+
 				// RpcProperty must not be bound - it needs to be called with the unwrapped target
 				if (result.constructor.name === 'RpcProperty') {
+					console.log('[otel-rpc] ✅ Returning RpcProperty wrapper for:', String(prop))
 					return (...args: unknown[]) => (unwrappedTarget as any)[prop](...args)
 				}
+				console.log('[otel-rpc] ⚠️  Binding and instrumenting:', String(prop))
 				const boundResult = result.bind(unwrappedTarget)
 				return instrumentAnyFn(boundResult, initialiser, {})
 			}

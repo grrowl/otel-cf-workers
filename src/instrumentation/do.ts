@@ -218,11 +218,20 @@ function instrumentDurableObject(
 				// Unwrap target first to access raw properties (especially important for RpcProperty)
 				const unwrappedTarget = unwrap(target)
 				const result = Reflect.get(unwrappedTarget, prop)
+
+				// DEBUG LOGGING
+				console.log('[otel-do] Accessing property:', String(prop))
+				console.log('[otel-do] Result type:', typeof result)
 				if (typeof result === 'function') {
+					console.log('[otel-do] Function constructor name:', result.constructor.name)
+					console.log('[otel-do] Is RpcProperty?', result.constructor.name === 'RpcProperty')
+
 					// RpcProperty must not be bound - it needs to be called with the unwrapped target
 					if (result.constructor.name === 'RpcProperty') {
+						console.log('[otel-do] ✅ Returning RpcProperty wrapper for:', String(prop))
 						return (...args: unknown[]) => (unwrappedTarget as any)[prop](...args)
 					}
+					console.log('[otel-do] ⚠️  Binding and instrumenting:', String(prop))
 					const boundResult = result.bind(unwrappedTarget)
 					return instrumentAnyFn(boundResult, initialiser, env, state.id)
 				}

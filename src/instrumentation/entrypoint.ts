@@ -105,11 +105,20 @@ function instrumentEntrypoint(entrypoint: WorkerEntrypoint, initialiser: Initial
 				// Unwrap target first to access raw properties (especially important for RpcProperty)
 				const unwrappedTarget = unwrap(target)
 				const result = Reflect.get(unwrappedTarget, prop)
+
+				// DEBUG LOGGING
+				console.log('[otel-entrypoint] Accessing property:', String(prop))
+				console.log('[otel-entrypoint] Result type:', typeof result)
 				if (typeof result === 'function') {
+					console.log('[otel-entrypoint] Function constructor name:', result.constructor.name)
+					console.log('[otel-entrypoint] Is RpcProperty?', result.constructor.name === 'RpcProperty')
+
 					// RpcProperty must not be bound - it needs to be called with the unwrapped target
 					if (result.constructor.name === 'RpcProperty') {
+						console.log('[otel-entrypoint] ✅ Returning RpcProperty wrapper for:', String(prop))
 						return (...args: unknown[]) => (unwrappedTarget as any)[prop](...args)
 					}
+					console.log('[otel-entrypoint] ⚠️  Binding and instrumenting:', String(prop))
 					const boundResult = result.bind(unwrappedTarget)
 					return instrumentAnyFn(boundResult, initialiser, env)
 				}
