@@ -23,7 +23,6 @@ type Env = Record<string, unknown>
 function instrumentBindingStub(stub: DurableObjectStub, nsName: string): DurableObjectStub {
 	const stubHandler: ProxyHandler<typeof stub> = {
 		get(target, prop, receiver) {
-			console.log('[otel-stub] Accessing stub property:', String(prop), 'on namespace:', nsName)
 			if (prop === 'fetch') {
 				const fetcher = Reflect.get(target, prop)
 				const attrs = {
@@ -34,7 +33,6 @@ function instrumentBindingStub(stub: DurableObjectStub, nsName: string): Durable
 				}
 				return instrumentClientFetch(fetcher, () => ({ includeTraceContext: true }), attrs)
 			} else {
-				console.log('[otel-stub] Using passthroughGet for:', String(prop))
 				return passthroughGet(target, prop, receiver)
 			}
 		},
@@ -45,9 +43,7 @@ function instrumentBindingStub(stub: DurableObjectStub, nsName: string): Durable
 function instrumentBindingGet(getFn: DurableObjectNamespace['get'], nsName: string): DurableObjectNamespace['get'] {
 	const getHandler: ProxyHandler<DurableObjectNamespace['get']> = {
 		apply(target, thisArg, argArray) {
-			console.log('[otel-binding] Getting DO stub for namespace:', nsName)
 			const stub: DurableObjectStub = Reflect.apply(target, thisArg, argArray)
-			console.log('[otel-binding] Instrumenting stub for namespace:', nsName)
 			return instrumentBindingStub(stub, nsName)
 		},
 	}
@@ -223,20 +219,12 @@ function instrumentDurableObject(
 				const unwrappedTarget = unwrap(target)
 				const result = Reflect.get(unwrappedTarget, prop)
 
-				// DEBUG LOGGING
-				console.log('[otel-do] Accessing property:', String(prop))
-				console.log('[otel-do] Result type:', typeof result)
 				if (typeof result === 'function') {
-					console.log('[otel-do] Function constructor name:', result.constructor.name)
-					console.log('[otel-do] Is RpcProperty?', result.constructor.name === 'RpcProperty')
-
 					// RpcProperty must not be bound - it needs to be called with the unwrapped target
 					if (result.constructor.name === 'RpcProperty') {
-						console.log('[otel-do] ✅ Returning RpcProperty wrapper using result.apply()')
 						// Call the captured result directly with unwrapped target as `this`
 						return (...args: unknown[]) => result.apply(unwrappedTarget, args)
 					}
-					console.log('[otel-do] ⚠️  Binding and instrumenting:', String(prop))
 					const boundResult = result.bind(unwrappedTarget)
 					return instrumentAnyFn(boundResult, initialiser, env, state.id)
 				}
