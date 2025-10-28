@@ -31,10 +31,10 @@ function instrumentRpcTarget(rpcTarget: RpcTarget, initialiser: Initialiser) {
 			const result = Reflect.get(unwrappedTarget, prop)
 
 			if (typeof result === 'function') {
-				// RpcProperty must not be bound - it needs to be called with the unwrapped target
+				// RpcProperty must not be wrapped - return it directly
 				if (result.constructor.name === 'RpcProperty') {
-					// Call the captured result directly with unwrapped target as `this`
-					return (...args: unknown[]) => result.apply(unwrappedTarget, args)
+					// RpcProperty handles its own serialization and this binding
+					return result
 				}
 				const boundResult = result.bind(unwrappedTarget)
 				return instrumentAnyFn(boundResult, initialiser, {})

@@ -51,9 +51,11 @@ export function passthroughGet(target: any, prop: string | symbol, thisArg?: any
 
 	if (typeof value === 'function') {
 		if (value.constructor.name === 'RpcProperty') {
-			// Call the captured value directly with the unwrapped target as `this`
-			// Don't re-access the property as that can cause issues with multiple proxy layers
-			return (...args: unknown[]) => value.apply(unwrappedTarget, args)
+			// RpcProperty is Cloudflare's RPC proxy - return it directly
+			// It handles its own serialization and this binding internally
+			// Wrapping it in a lambda causes serialization errors when the lambda
+			// captures unwrappedTarget (which may contain DO instances)
+			return value
 		}
 		return value.bind(thisArg)
 	} else {
